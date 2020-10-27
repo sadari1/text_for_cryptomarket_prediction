@@ -1,1 +1,23 @@
 
+
+
+explore website:
+
+1. scrapy shell "url link"
+
+use spider:
+
+1. scrap crawl spider_name -o output.json
+
+Current scraping capabilities:
+
+1. Bitcointalk forum: pass in a link to some thread, and the spider will scrape all of the posts in that thread. Then, it will
+hop to the next thread and keep going until it hits the first thread in the form.
+
+2. Altcointalk forums: pass in the forum link itself. It will go through all pages in that forum looking for threads.
+Once finding a thread, it will scrape all the content in each thread and keep going to the next thread.
+
+3. Coinmarketcap: Pick your range of dates and it will scrape all the coin values in that date range.
+
+All code was developed by myself. The code may not be the most efficient, but it works. Currently, it has a built-in
+delay of 1 second before opening a new thread, so as not to get blacklisted. 
