@@ -65,18 +65,19 @@ class TestSpider(scrapy.Spider):
         # if next_page is not None:
         #     yield response.follow(next_page, callback=self.parse)
 class TestSpider2(scrapy.Spider):
+    name = "bitcointalk_threadhopper"
 
     def __init__(self):
         self.end_date = 'January 11, 2016, 07:02:21 PM'
         self.back_marker = "«"
         self.count = 0
         
-    name = "bitcointalk_threadhopper"
     
     def start_requests(self):
         urls = [
+        "https://bitcointalk.org/index.php?topic=154954.0;prev_next=next#new",
         #"https://bitcointalk.org/index.php?topic=5280666.0;prev_next=prev#new",
-        "https://bitcointalk.org/index.php?topic=3189768.40",
+        # "https://bitcointalk.org/index.php?topic=3189768.40",
         ]
         for url in urls:
             yield scrapy.Request(url=url, callback=self.parse)
@@ -158,7 +159,9 @@ class TestSpider3(scrapy.Spider):
 
     def start_requests(self):
         urls = [
-            "https://www.altcoinstalks.com/index.php?board=15.0",
+            "https://www.altcoinstalks.com/index.php?board=12.0",
+            # "https://www.altcoinstalks.com/index.php?board=13.0"
+            # "https://www.altcoinstalks.com/index.php?board=15.0",
         # "https://www.altcoinstalks.com/index.php?topic=79189.0",
         ]
         for url in urls:
@@ -291,19 +294,23 @@ class TestSpider3(scrapy.Spider):
             #     print("Found no more pages")
 
 
-class TestSpider2(scrapy.Spider):
+class TestSpider4(scrapy.Spider):
 
     def __init__(self):
         self.count = 0
         
     name = "coinprice_extractor"
-    
+    #Scrapy 2.3.0
     def start_requests(self):
         urls = [
+            "https://coinmarketcap.com/currencies/bitcoin/historical-data/?start=20201026&end=20201123"
         #"https://bitcointalk.org/index.php?topic=5280666.0;prev_next=prev#new",
-        # "https://coinmarketcap.com/currencies/bitcoin/historical-data/?start=20150922&end=20201022",
-        "https://coinmarketcap.com/currencies/dogecoin/historical-data/?start=20150922&end=20201022",
+        # "https://coinmarketcap.com/currencies/bitcoin/historical-data/?start=20201022&end=20201124",
+        # "https://coinmarketcap.com/currencies/dogecoin/historical-data/?start=20201022&end=20201124",
+        # "https://coinmarketcap.com/currencies/waves/historical-data/?start=20201022&end=20201124",
+        # "https://coinmarketcap.com/currencies/steem/historical-data/?start=20201022&end=20201124",
         ]
+
         for url in urls:
             yield scrapy.Request(url=url, callback=self.parse)
 
