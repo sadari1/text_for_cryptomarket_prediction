@@ -259,7 +259,7 @@ x_test = np.array(x_test).reshape(x_test.shape[0], x_test.shape[1])
 
 from tensorflow.keras.layers import Conv1D, BatchNormalization, LeakyReLU
 from tensorflow.keras.regularizers import l1_l2
-
+# from keras.utils.vis_utils import plot_model
 
 batch_size = 64
 # vocab_size = len(vocab)
@@ -276,29 +276,32 @@ input_layer = Input( shape=(x_train.shape[1]))
 # dense = Dense(x_train.shape[2], activation='softmax')(lstm)
 # # lstm = LSTM(x_train.shape[1], return_sequences=True, activation='relu')(lstm)
 
-h1 = Dense(16, activation = 'linear')(input_layer)
+h1 = Dense(16)(input_layer)
 bn = BatchNormalization()(h1)
-lr = LeakyReLU(alpha=0.95)(bn)
+lr = LeakyReLU(alpha=0.999)(bn)
 h2 = Dense(16, activation = 'linear')(h1)
 bn = BatchNormalization()(h2)
-lr = LeakyReLU(alpha=0.95)(bn)
+lr = LeakyReLU(alpha=0.999)(bn)
 # h2 = Dense(16, activation = 'linear')(h2)
 # bn = BatchNormalization()(h2)
 # lr = LeakyReLU(alpha=0.9)(bn)
 h2 = Dense(8, activation = 'linear')(h2)
 bn = BatchNormalization()(h2)
-lr = LeakyReLU(alpha=0.95)(bn)
+lr = LeakyReLU(alpha=0.999)(bn)
 # h2 = Dense(8, activation = 'linear')(h2)
 # lr = LeakyReLU(alpha=0.9)(h2)
 # h2 = Dense(8, activation = 'linear')(h2)
 # lr = LeakyReLU(alpha=0.9)(h2)
 h2 = Dense(8, activation = 'linear')(h2)
-lr = LeakyReLU(alpha=0.95)(h2)
+lr = LeakyReLU(alpha=0.999)(h2)
 # h2 = Dense(8, activation = 'linear')(h2)
 # lr = LeakyReLU(alpha=0.9)(h2)
 h2 = Dense(4, activation = 'linear')(h2)
+lr = LeakyReLU(alpha=0.999)(h2)
 h2 = Dense(4, activation = 'linear')(h2)
+lr = LeakyReLU(alpha=0.999)(h2)
 h2 = Dense(4, activation = 'linear')(h2)
+lr = LeakyReLU(alpha=0.999)(h2)
 # h2 = Dense(128, activation = 'relu', kernel_regularizer=l1_l2(1e-3, 1e-3))(h2)
 # h2 = Dense(128, activation = 'relu', kernel_regularizer=l1_l2(1e-3, 1e-3))(h2)
 # h2 = Dense(64, activation = 'relu', kernel_regularizer=l1_l2(1e-3, 1e-3))(h2)
@@ -352,7 +355,7 @@ print(dnn.summary())
 # lstm = Dense(1222, activation='softmax')(lstm)
 
 # model = Model(input_layer, lstm)
-
+# plot_model(dnn, to_file='model_plot.png', show_shapes=True, show_layer_names=True)
 #%%
 
 
@@ -364,14 +367,14 @@ checkpoint = ModelCheckpoint('dnn3.hdf5', monitor='mse', verbose=1, save_best_on
 batch_size=8
 # epochs=900
 epochs=1
-# epochs=500
+# epochs=300
 
 dnn.fit(x=x_train, y=y_train,
         batch_size=batch_size, epochs=epochs,
         verbose=1, callbacks=[checkpoint])
 
 #%%
-# dnn = keras.models.load_model("return_lstm.h5")
+# dnn = keras.models.load_model("final_lstmbkp5.h5")
 
 #%%
 
@@ -379,7 +382,7 @@ preds = dnn.predict(x_test)
 # preds = dnn.predict(x_train)
 # lrpreds = lr.predict(x_test)
 
-#%%
+## %%
 import matplotlib.pyplot as plt
 
 plt.plot(preds)
@@ -396,24 +399,85 @@ plt.show()
 import matplotlib.pyplot as plt
 
 plt.clf()
-plt.plot(scaler.inverse_transform(preds-2))
+plt.figure(figsize=(15,10))
+plt.plot(scaler.inverse_transform(preds))
 # plt.plot(lrpreds)
 plt.plot(scaler.inverse_transform(y_test))
 # plt.plot(y_train)
-plt.xticks(range(50))
+plt.xticks(range(0, 50, 5))
+plt.legend(['Predicted Returns', 'True Returns'])
+plt.xlabel("Weeks")
+plt.ylabel("Percent Return")
+plt.title("Graph of Predicted Return vs True Return")
+plt.savefig("finalreport_graph.png")
 plt.show()
-
+#%%
+# dnn.save('final_lstmbkp5.h5')
 #%%
 
 
 
-ones_y = [1 if abs(f) > 7 else 0 for f in scaler.inverse_transform(y_test)]
-ones_pred = [1 if abs(f) > 7 else 0 for f in scaler.inverse_transform(preds-2)]
+ones_y = [1 if abs(f) > 1 else 0 for f in scaler.inverse_transform(y_test)]
+ones_pred = [1 if abs(f) > 1 else 0 for f in scaler.inverse_transform(preds)]
+##%%
+from sklearn.metrics import accuracy_score, roc_auc_score, classification_report, confusion_matrix
+
+one_auc = roc_auc_score(ones_y, ones_pred)
+one_acc = accuracy_score(ones_y, ones_pred)
+one_creport = classification_report(ones_y, ones_pred)
+one_cm = confusion_matrix(ones_y, ones_pred)
 #%%
+
+
+
+ones_y = [1 if abs(f) > 10 else 0 for f in scaler.inverse_transform(y_test)]
+ones_pred = [1 if abs(f) > 10 else 0 for f in scaler.inverse_transform(preds)]
+##%%
 from sklearn.metrics import accuracy_score, roc_auc_score
 
+ten_auc = roc_auc_score(ones_y, ones_pred)
+ten_acc = accuracy_score(ones_y, ones_pred)
+ten_creport = classification_report(ones_y, ones_pred)
+ten_cm = confusion_matrix(ones_y, ones_pred)
 
-roc_auc_score(ones_y, ones_pred), accuracy_score(ones_y, ones_pred)
+#%%
+pd_array = [['1%', one_auc, one_acc], ['10%', ten_auc, ten_acc]]
+pd.DataFrame(pd_array, columns=['Threshold', 'AUC', 'Accuracy'])
+
+#%%
+
+import seaborn as sns
+# plt.figure(figsize=(10,10))
+print("Threshold 1%")
+plt.figure()
+plt.clf()
+ax = sns.heatmap(one_cm, annot=True,fmt='g')
+ax.set_ylim([0,2])
+ax.invert_xaxis()
+ax.invert_yaxis()
+plt.ylabel('Actual')
+plt.xlabel('Predicted')
+plt.title("Confusion Matrix - Threshold 1%")
+plt.show()
+print(one_creport)
+
+#%%
+
+import seaborn as sns
+# plt.figure(figsize=(10,10))
+print("Threshold 10%")
+plt.figure()
+plt.clf()
+ax = sns.heatmap(ten_cm, annot=True,fmt='g')
+ax.set_ylim([0,2])
+ax.invert_xaxis()
+ax.invert_yaxis()
+plt.ylabel('Actual')
+plt.xlabel('Predicted')
+plt.title("Confusion Matrix - Threshold 10%")
+plt.show()
+print(ten_creport)
+
 #%%
 ipreds = scaler.inverse_transform(preds)
 iytest = scaler.inverse_transform(y_test)

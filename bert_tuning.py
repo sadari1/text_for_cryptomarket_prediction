@@ -4,19 +4,35 @@ import numpy as np
 import time 
 import tensorflow as tf
 import tensorflow_datasets as tfds
-from transformer_redone import *
+# from transformer_redone import *
 
 from transformers import BertTokenizer, TFBertForSequenceClassification
 from transformers import InputExample, InputFeatures
 
 import mlflow
 import mlflow.tensorflow
-
+from sentence_transformers import SentenceTransformer, util
+model = SentenceTransformer('distilbert-base-nli-stsb-mean-tokens')
 from sklearn.metrics import roc_auc_score
 #%%
 
 # final df3 is just the bitcoins, df5 is max length 800.
-df = pd.read_csv("data/final_df5.csv")
+df = pd.read_csv("data/final_df.csv").tail(25000)
+
+#%%
+
+tic = time.time()
+# df.text = df.text.apply(lambda x: x[:400])
+# df.text = df.text.apply(lambda x: model.encode(x, convert_to_tensor=False))
+encodings = model.encode(list(df['text']), convert_to_tensor=False)
+toc = time.time()
+print(f'Job took {toc-tic} seconds.')
+
+#%%
+
+df['encoded'] = list(encodings)
+df['diff'] = df['diff'].apply(lambda x: int(x))
+
 
 #%%
 # from nltk.corpus import stopwords
@@ -24,7 +40,7 @@ df = pd.read_csv("data/final_df5.csv")
 # words = set(nltk.corpus.words.words())
 punctuation_list = ['.', ':', '!', '?', ',', '^', '(', ')', '。', '、', "'", ":/", '-', '/', '&', ';', '$', '*', '+', '\\', '_', '`', '"', '=', '[', ']']
 purge_set = ['in', 'a', 'I', 'you', 'he', 'she', 'the', 'is', 'and', 'it', 'be', 'that', 'they']
-stopset = set(purge_set + punctuation_list)
+stopset = set(punctuation_list)# + purge_set)
 def arr_to_str(array):
     _ = ""
     for f in array:
@@ -114,10 +130,11 @@ DATA_COLUMN = 'text'
 LABEL_COLUMN = 'diff'
 BATCH_SIZE = 16
 
-train = df.iloc[0:-100]#df.iloc[:-100]
+train = df.iloc[:-100]#df.iloc[:-100]
 test = df.iloc[-100:]#df.iloc[-100:]
 
 tic = time.time()
+print(tic)
 # train and test is your dataset
 train_InputExamples, validation_InputExamples = convert_data_to_examples(train, test, DATA_COLUMN, LABEL_COLUMN)
 
@@ -137,21 +154,21 @@ with mlflow.start_run():
   
   mlflow.tensorflow.autolog()
   
-  optimizer = tf.keras.optimizers.Adam(learning_rate=3e-5, epsilon=1e-08, clipnorm=1.0)
+  optimizer = tf.keras.optimizers.Adam(learning_rate=1e-5, epsilon=1e-08, clipnorm=1.0)
   loss = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
   metric = tf.keras.metrics.SparseCategoricalAccuracy('accuracy')
 
   model.compile(optimizer=optimizer, loss=loss, metrics=[metric])
   
   tic=  time.time()
-  model.fit(train_data, epochs=7, verbose=1, validation_data=validation_data)
+  model.fit(train_data, epochs=40, verbose=1, validation_data=validation_data)
 
   toc=time.time()
   print(f"Job took {toc-tic} seconds.")
 
 #%%
 
-test_ = test.text#list(np.array(test.text))
+test_ = test.iloc[:100].text#list(np.array(test.text))
 tf_batch = tokenizer(list(test_), max_length=128, padding=True, truncation=True, return_tensors='tf')
 tf_outputs = model(tf_batch)
 tf_predictions = tf.nn.softmax(tf_outputs[0], axis=-1)
@@ -167,13 +184,16 @@ for i in range(len(test_)):
 
 auc = roc_auc_score(y_true, preds)
 print(f"AUC: {auc}")
-#%%
+ #%%
 
 roc_auc_score(y_true, preds)
-#%%
+# %%
 
 #%%
 
+#%%
+import keras.backend as K
+K.clear_session()
 
 #%%
 x = df['text']
